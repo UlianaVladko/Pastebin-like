@@ -2,4 +2,4 @@ package middleware
 
 type contextKey string
 
-const PasteKey contextKey = "paste"
+var PasteKey contextKey = "paste"

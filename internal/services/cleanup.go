@@ -11,6 +11,7 @@ func StartExpiredPastesCleanup(db *sql.DB, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 
 	go func() {
+		defer ticker.Stop()
 		for range ticker.C {
 			if err := models.DeleteExpiredPastes(db); err != nil {
 				log.Println("cleanup expired pastes error:", err)

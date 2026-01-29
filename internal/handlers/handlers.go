@@ -116,35 +116,6 @@ func ViewPasteHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// func ViewPasteShortHandler(w http.ResponseWriter, r *http.Request) {
-// 	short := strings.TrimPrefix(r.URL.Path, "/p/")
-// 	if short == "" {
-// 		render404(w)
-// 		return
-// 	}
-
-// 	paste, err := models.GetPasteByShortLink(db, short)
-// 	if err != nil || paste == nil {
-// 		render404(w)
-// 		return
-// 	}
-
-// 	if paste.ExpiresAt != nil && time.Now().UTC().After(*paste.ExpiresAt) {
-// 		render404(w)
-// 		return
-// 	}
-
-// 	templates.ExecuteTemplate(w, "view.html", struct {
-// 		*models.Paste
-// 		CreatedAgo string
-// 		Edited     bool
-// 	}{
-// 		Paste:      paste,
-// 		CreatedAgo: utils.TimeAgo(paste.CreatedAt),
-// 		Edited:     paste.UpdatedAt != nil && !paste.UpdatedAt.Equal(paste.CreatedAt),
-// 	})
-// }
-
 func EditPasteHandler(w http.ResponseWriter, r *http.Request) {
 	short := strings.TrimPrefix(r.URL.Path, "/edit/")
 	token := r.URL.Query().Get("token")
@@ -155,11 +126,6 @@ func EditPasteHandler(w http.ResponseWriter, r *http.Request) {
 
 	paste, err := models.GetPasteByShortLink(db, short)
 	if err != nil || paste == nil || paste.EditToken != token {
-		Render404(w)
-		return
-	}
-
-	if paste.ExpiresAt != nil && time.Now().UTC().After(*paste.ExpiresAt) {
 		Render404(w)
 		return
 	}

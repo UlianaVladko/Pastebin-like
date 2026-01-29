@@ -30,11 +30,25 @@ func main() {
 	http.HandleFunc("/paste", handlers.RateLimit(handlers.CreatePasteHandler))
 	http.HandleFunc(
 		"/view/",
-		middleware.PasteMiddleware(handlers.LoadPasteByID, handlers.Render404, handlers.ViewPasteHandler),
+		middleware.PasteMiddleware(
+			middleware.LoadPasteByID(db),
+			handlers.Render404,
+			middleware.PasteAccessMiddleware(
+				handlers.Render404,
+				handlers.ViewPasteHandler,
+			),
+		),
 	)
 	http.HandleFunc(
 		"/p/",
-		middleware.PasteMiddleware(handlers.LoadPasteByShort, handlers.Render404, handlers.ViewPasteHandler),
+		middleware.PasteMiddleware(
+			middleware.LoadPasteByShort(db),
+			handlers.Render404,
+			middleware.PasteAccessMiddleware(
+				handlers.Render404,
+				handlers.ViewPasteHandler,
+			),
+		),
 	)
 	http.HandleFunc("/edit/", handlers.EditPasteHandler)
 	http.HandleFunc("/delete/", handlers.DeletePasteHandler)
