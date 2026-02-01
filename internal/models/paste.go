@@ -11,6 +11,7 @@ const (
 	LangGo   = "go"
 	LangJS   = "js"
 	LangSQL  = "sql"
+	LangPy   = "py"
 )
 
 type Paste struct {
@@ -26,44 +27,36 @@ type Paste struct {
 	EditToken string
 }
 
-func CreatePaste(db *sql.DB, content, language, name string, isPrivate bool, expiresAt *time.Time) (int64, string, error) {
+func CreatePaste(db *sql.DB, content, language, name string, isPrivate bool, expiresAt *time.Time) (int64, string, string, error) {
 	shortLink := generateShortCode(8)
 	editToken := generateShortToken()
 	now := time.Now().UTC()
 
-	result, err := db.Exec(
-		`INSERT INTO pastes (content, language, name, is_private, expires_at, created_at, updated_at, short_link, edit_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		content, language, name, boolToInt(isPrivate), expiresAt, now, now, shortLink, editToken,
-	)
+	var id int64
+	err := db.QueryRow(
+		`INSERT INTO pastes (content, language, name, is_private, expires_at, created_at, updated_at, short_link, edit_token) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+		content, language, name, isPrivate, expiresAt, now, now, shortLink, editToken,
+	).Scan(&id)
 	if err != nil {
-		return 0, "", err
+		return 0, "", "", err
 	}
-	id, err := result.LastInsertId()
-	return id, editToken, err
-}
-
-func boolToInt(isPrivate bool) int {
-	if isPrivate {
-		return 1
-	}
-	return 0
+	return id, shortLink, editToken, nil
 }
 
 func GetPaste(db *sql.DB, id int64) (*Paste, error) {
 	row := db.QueryRow(
-		`SELECT id, name, content, created_at, updated_at, is_private, expires_at, language, short_link, edit_token FROM pastes WHERE id = ?`,
+		`SELECT id, name, content, created_at, updated_at, is_private, expires_at, language, short_link, edit_token FROM pastes WHERE id =$1`,
 		id,
 	)
 
 	var p Paste
-	var isPrivateInt int
 	err := row.Scan(
 		&p.ID,
 		&p.NamePaste,
 		&p.Content,
 		&p.CreatedAt,
 		&p.UpdatedAt,
-		&isPrivateInt,
+		&p.IsPrivate,
 		&p.ExpiresAt,
 		&p.Language,
 		&p.ShortLink,
@@ -72,7 +65,6 @@ func GetPaste(db *sql.DB, id int64) (*Paste, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.IsPrivate = isPrivateInt != 0
 	return &p, nil
 }
 
@@ -92,19 +84,18 @@ func generateShortToken() string {
 
 func GetPasteByShortLink(db *sql.DB, short string) (*Paste, error) {
 	row := db.QueryRow(
-		`SELECT id, name, content, created_at, updated_at, is_private, expires_at, language, short_link, edit_token FROM pastes WHERE short_link = ?`,
+		`SELECT id, name, content, created_at, updated_at, is_private, expires_at, language, short_link, edit_token FROM pastes WHERE short_link =$1`,
 		short,
 	)
 
 	var p Paste
-	var isPrivateInt int
 	err := row.Scan(
 		&p.ID,
 		&p.NamePaste,
 		&p.Content,
 		&p.CreatedAt,
 		&p.UpdatedAt,
-		&isPrivateInt,
+		&p.IsPrivate,
 		&p.ExpiresAt,
 		&p.Language,
 		&p.ShortLink,
@@ -116,22 +107,23 @@ func GetPasteByShortLink(db *sql.DB, short string) (*Paste, error) {
 		}
 		return nil, err
 	}
-	p.IsPrivate = isPrivateInt != 0
 	return &p, nil
 }
 
 func UpdatePaste(db *sql.DB, id int64, content, name, language string, isPrivate bool) error {
 	now := time.Now().UTC()
 	_, err := db.Exec(
-		`UPDATE pastes SET content=?, name=?, language=?, is_private=?, updated_at=? WHERE id=?`,
-		content, name, language, boolToInt(isPrivate), now, id,
+		`UPDATE pastes SET content=$1, name=$2, language=$3, is_private=$4, updated_at=$5 WHERE id=$6`,
+		content, name, language, isPrivate, now, id,
 	)
 	return err
 }
 
 func DeleteExpiredPastes(db *sql.DB) error {
+	now := time.Now().UTC()
 	_, err := db.Exec(
-		`DELETE FROM pastes WHERE expires_at IS NOT NULL AND expires_at <= CURRENT_TIMESTAMP`,
+		`DELETE FROM pastes WHERE expires_at IS NOT NULL AND expires_at <= $1`,
+		now,
 	)
 	return err
 }

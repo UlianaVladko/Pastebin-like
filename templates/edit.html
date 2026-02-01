@@ -1,19 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
+{{define "content"}}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Edit Paste</title>
-
-  <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-
-<body class="py-4">
-
+<div class="py-4">
   <div class="container-md">
-
     <h1 class="mb-3">Edit Paste</h1>
 
     <form method="post" action="">
@@ -67,9 +55,7 @@
     <div>
       <a href="/view/{{.ID}}" class="link-secondary">&larr; Back to paste</a>
     </div>
-
   </div>
+</div>
 
-</body>
-
-</html>
+{{end}}

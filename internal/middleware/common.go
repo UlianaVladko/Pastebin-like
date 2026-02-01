@@ -1,5 +1,5 @@
 package middleware
 
-type contextKey string
+type contextKey int
 
-var PasteKey contextKey = "paste"
+var PasteKey contextKey = 0

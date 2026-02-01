@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"net/http"
 	"pastebin/internal/models"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -34,17 +33,6 @@ func PasteMiddleware(
 	}
 }
 
-func LoadPasteByID(db *sql.DB) func(r *http.Request) (*models.Paste, error) {
-	return func(r *http.Request) (*models.Paste, error) {
-		idStr := strings.TrimPrefix(r.URL.Path, "/view/")
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		return models.GetPaste(db, id)
-	}
-}
-
 func LoadPasteByShort(db *sql.DB) func(r *http.Request) (*models.Paste, error) {
 	return func(r *http.Request) (*models.Paste, error) {
 		short := strings.TrimPrefix(r.URL.Path, "/p/")
@@ -54,3 +42,14 @@ func LoadPasteByShort(db *sql.DB) func(r *http.Request) (*models.Paste, error) {
 		return models.GetPasteByShortLink(db, short)
 	}
 }
+
+// func LoadPasteByShortPrefix(db *sql.DB, prefix string) func(r *http.Request) (*models.Paste, error) {
+// 	return func(r *http.Request) (*models.Paste, error) {
+// 		short := strings.TrimPrefix(r.URL.Path, prefix)
+// 		short = strings.TrimPrefix(short, "/")
+// 		if short == "" {
+// 			return nil, sql.ErrNoRows
+// 		}
+// 		return models.GetPasteByShortLink(db, short)
+// 	}
+// }

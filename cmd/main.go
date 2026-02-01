@@ -4,18 +4,35 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
+	"time"
+
 	"pastebin/internal/handlers"
 	"pastebin/internal/middleware"
 	"pastebin/internal/services"
-	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	// _ "github.com/mattn/go-sqlite3"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 func main() {
+	// db, err := sql.Open("sqlite3", "./pastes.db")
 
-	db, err := sql.Open("sqlite3", "./pastes.db")
+	if err := godotenv.Load(); err != nil {
+		log.Println(".env not found")
+	}
+
+	connStr := os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		log.Fatal("DATABASE_URL is empty")
+	}
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -23,22 +40,10 @@ func main() {
 	// db.Exec(string(schema))
 
 	handlers.Init(db)
-
 	services.StartExpiredPastesCleanup(db, 10*time.Second)
 
-	http.HandleFunc("/", handlers.FormHandler)
+	http.HandleFunc("/", handlers.TmplPasteHandler)
 	http.HandleFunc("/paste", handlers.RateLimit(handlers.CreatePasteHandler))
-	http.HandleFunc(
-		"/view/",
-		middleware.PasteMiddleware(
-			middleware.LoadPasteByID(db),
-			handlers.Render404,
-			middleware.PasteAccessMiddleware(
-				handlers.Render404,
-				handlers.ViewPasteHandler,
-			),
-		),
-	)
 	http.HandleFunc(
 		"/p/",
 		middleware.PasteMiddleware(

@@ -1,57 +1,144 @@
-<!DOCTYPE html>
-<html lang="ru">
+{{define "content"}}
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+<div class="d-flex flex-column h-100">
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <div class="flex-grow-1 py-4">
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/sql.min.js"></script>
+    <div class="container">
 
-  <title>Pastebin-like</title>
-</head>
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start mb-4">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+              <li class="breadcrumb-item"><a href="/">My pastes</a></li>
+              <li class="breadcrumb-item active">{{.NamePaste}}</li>
+            </ol>
+          </nav>
+          <p class="text-muted small mb-0">
+            Created {{.CreatedAgo}}
+            {{if .Edited}}· <span class="text-warning"><i>edited</i></span>{{end}}
+          </p>
+        </div>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll('pre code').forEach((block) => {
-      hljs.highlightElement(block);
-    });
-  });
-</script>
+        {{if .EditToken}}
+        <div class="d-flex gap-2">
+          <a href="/edit/{{.ShortLink}}?token={{.EditToken}}" class="btn btn-outline-secondary">
+            <i class="bi bi-pencil"></i> Edit
+          </a>
+          <a href="/delete/{{.ShortLink}}?token={{.EditToken}}" class="btn btn-outline-danger"
+            onclick="return confirm('Delete this paste?')">
+            <i class="bi bi-trash"></i> Delete
+          </a>
+        </div>
+        {{end}}
+      </div>
 
-<body class="p-3">
+      <!-- SHORT LINK -->
+      <div class="input-group mb-4">
+        <input type="text" class="form-control" value="{{if .IsPrivate}}Private paste{{else}}/p/{{.ShortLink}}{{end}}"
+          readonly>
+        {{if not .IsPrivate}}
+        <button class="btn btn-outline-secondary" onclick="copyText(this)">
+          <i class="bi bi-clipboard"></i>
+        </button>
+        {{end}}
+      </div>
 
-  <h3>{{.NamePaste}}</h3>
-  <p class="text-muted mb-1">
-    Created at: {{ .CreatedAt.Local.Format "02 Jan 2006 15:04" }}
-    ({{.CreatedAgo}})
-    {{if .Edited}}
-    <span class="text-warning">(edited)</span>
-    {{end}}
-  </p>
-  <p class="text-muted mb-3">Language: {{.Language}}</p>
+      <!-- FILE CARD -->
+      <div class="card mb-4">
 
-  {{if .ShortLink}}
-  <p>Short link: <a href="/p/{{.ShortLink}}">/p/{{.ShortLink}}</a></p>
-  {{end}}
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center">
+            <i class="bi bi-file-code me-2"></i>
+            <strong>{{.NamePaste}}</strong>
+            <span class="text-muted ms-2">{{.Language}}</span>
+            <span class="text-muted ms-2">({{.FileSize}})</span>
+          </div>
 
-  {{if .EditToken}}
-  <a href="/edit/{{.ShortLink}}?token={{.EditToken}}" class="btn btn-primary mb-2">Edit</a>
-  <a href="/delete/{{.ShortLink}}?token={{.EditToken}}" class="btn btn-danger mb-2"
-    onclick="return confirm('Are you sure you want to delete this paste?')">Delete</a>
-  {{end}}
+          <div class="btn-group btn-group-sm">
+            <button class="btn btn-primary" onclick="openRaw(this)">Raw</button>
+            <button class="btn btn-outline-secondary" onclick="copyCode(this)">
+              <i class="bi bi-copy"></i>
+            </button>
+            <button class="btn btn-outline-secondary" onclick="downloadCode(this)">
+              <i class="bi bi-download"></i>
+            </button>
+          </div>
+        </div>
 
-  <div class="card">
-    <div class="card-body p-3 bg-dark text-light">
-      <pre><code class="language-{{.Language}}">{{.Content}}</code></pre>
+        <div class="card-body p-0">
+          <pre class="m-0 p-3 bg-dark text-light"><code class="language-{{.Language}}">{{.Content}}</code>
+        </pre>
+        </div>
+
+      </div>
     </div>
   </div>
+</div>
 
-</body>
+<script>
+  hljs.highlightAll();
 
-</html>
+  function flashOk(btn) {
+    const old = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => btn.innerHTML = old, 1200);
+  }
+
+  function copyText(btn) {
+    const input = btn.closest('.input-group').querySelector('input');
+    navigator.clipboard.writeText(input.value);
+    flashOk(btn);
+  }
+
+  function copyCode(btn) {
+    const code = document.querySelector('pre code').innerText;
+    navigator.clipboard.writeText(code);
+    flashOk(btn);
+  }
+
+  function openRaw(btn) {
+    const code = document.querySelector('pre code').innerText;
+    const w = window.open("", "_blank");
+    w.document.write("<pre>" + escapeHtml(code) + "</pre>");
+    w.document.close();
+    flashOk(btn);
+  }
+
+  function downloadCode(btn) {
+    const code = document.querySelector('pre code').innerText;
+    const name = "{{.NamePaste}}";
+    const ext = getExt("{{.Language}}");
+
+    const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name + ext;
+    a.click();
+
+    URL.revokeObjectURL(url);
+    flashOk(btn);
+  }
+
+  function getExt(lang) {
+    switch (lang.toLowerCase()) {
+      case "go": return ".go";
+      case "js": return ".js";
+      case "python": return ".py";
+      case "html": return ".html";
+      case "css": return ".css";
+      case "sql": return ".sql";
+      default: return ".txt";
+    }
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+</script>
+
+{{end}}
