@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -25,6 +26,14 @@ type Paste struct {
 	IsPrivate bool
 	ShortLink *string
 	EditToken string
+}
+
+type SidebarPaste struct {
+	ShortLink  string
+	NamePaste  string
+	Language   string
+	SizePaste  string
+	CreatedAgo time.Time
 }
 
 func CreatePaste(db *sql.DB, content, language, name string, isPrivate bool, expiresAt *time.Time) (int64, string, string, error) {
@@ -126,4 +135,34 @@ func DeleteExpiredPastes(db *sql.DB) error {
 		now,
 	)
 	return err
+}
+
+func GetLatestPublicPastes(db *sql.DB, limit int) ([]SidebarPaste, error) {
+	rows, err := db.Query(`
+	SELECT short_link, name, language, LENGTH(content), created_at
+	FROM pastes
+	WHERE is_private = false
+	ORDER BY created_at DESC
+	LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []SidebarPaste
+
+	for rows.Next() {
+		var p SidebarPaste
+		var size int
+
+		err := rows.Scan(&p.ShortLink, &p.NamePaste, &p.Language, &size, &p.CreatedAgo)
+		if err != nil {
+			return nil, err
+		}
+
+		p.SizePaste = fmt.Sprintf("%.2f KB", float64(size)/1024)
+		result = append(result, p)
+	}
+	return result, nil
 }

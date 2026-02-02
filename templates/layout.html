@@ -22,7 +22,21 @@
 
   {{template "header" .}}
 
-  {{template "content" .}}
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <main class="col-lg-8">
+        {{template "content" .Content}}
+      </main>
+
+      {{if .Sidebar}}
+      <aside class="col-lg-4 col-xl-3">
+        <div class="sticky-top pt-4">
+          {{template "sidebar" .Sidebar}}
+        </div>
+      </aside>
+      {{end}}
+    </div>
+  </div>
 
 </body>
 

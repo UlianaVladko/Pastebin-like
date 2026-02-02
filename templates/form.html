@@ -1,6 +1,6 @@
-{{define "content"}}
+{{define "form"}}
 
-<form action="/paste" method="post" class="container-md my-4">
+<form action="/paste" method="post" class="container-md my-14">
   <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
 
   <!-- Заголовок -->
@@ -19,7 +19,7 @@
 
     <!-- Paste Name -->
     <div class="mb-3">
-      <label for="pasteName" class="form-label">Paste Name <span class="text-danger">*</span></label>
+      <label for="pasteName" class="form-label">Paste Name</label>
       <input type="text" id="pasteName" name="name" class="form-control" placeholder="Enter paste name">
       <small class="text-muted">Choose a short, descriptive name.</small>
     </div>
@@ -70,7 +70,7 @@
     <legend class="float-none w-auto px-2">Content</legend>
 
     <div class="mb-3">
-      <label for="content" class="form-label">Paste Content</label>
+      <label for="content" class="form-label">Paste Content <span class="text-danger">*</span></label>
       <textarea id="content" name="content" class="form-control" rows="10"
         placeholder="Paste your code here"></textarea>
     </div>

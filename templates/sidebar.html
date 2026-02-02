@@ -1,0 +1,26 @@
+{{define "sidebar"}}
+
+<div class="card">
+  <div class="card-header">
+    Public pastes
+  </div>
+
+  <ul class="list-group list-group-flush">
+    {{range .}}
+    <li class="list-group-item small">
+      <a href="/p/{{.ShortLink}}" class="text-decoration-none">
+        {{.NamePaste}}
+      </a>
+      <div class="text-muted">
+        {{.CreatedAgo}} · {{.Language}} · {{.SizePaste}}
+      </div>
+    </li>
+    {{else}}
+    <li class="list-group-item text-muted small">
+      No public pastes yet
+    </li>
+    {{end}}
+  </ul>
+</div>
+
+{{end}}

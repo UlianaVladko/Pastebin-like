@@ -42,7 +42,7 @@ func main() {
 	handlers.Init(db)
 	services.StartExpiredPastesCleanup(db, 10*time.Second)
 
-	http.HandleFunc("/", handlers.TmplPasteHandler)
+	http.HandleFunc("/", handlers.IndexHandler)
 	http.HandleFunc("/paste", handlers.RateLimit(handlers.CreatePasteHandler))
 	http.HandleFunc(
 		"/p/",
